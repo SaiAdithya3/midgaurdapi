@@ -1,0 +1,7 @@
+1. use custom errors and #[debug(Errors)]
+2. each req gives you 400, so run a loop until the Date is current Date
+3. use .configure for maintaining modular routes
+4. write custom macros if used
+5. write a cronjob to update the db for certain time with sending current time in params
+6. pagination in fetching
+7. same params as midgaurd
