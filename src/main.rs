@@ -1,5 +1,7 @@
+use chrono::{DateTime, TimeZone, Utc};
 mod services {
     pub mod db;
+    pub mod fetchDepthPriceHistory;
 }
 
 use actix_web::{web, App, HttpServer, HttpResponse, Responder};
@@ -11,6 +13,12 @@ use mongodb::Client;
 struct AppState {
     db: Mutex<Option<Client>>,
 }
+
+pub fn format_timestamp(timestamp: i64) -> String {
+    let datetime = Utc.timestamp_opt(timestamp, 0).unwrap();
+    datetime.format("%Y-%m-%d %H:%M:%S UTC").to_string()
+}
+
 
 #[actix_web::get("/")]
 async fn home_route() -> impl Responder {
@@ -30,6 +38,12 @@ async fn main() -> std::io::Result<()> {
     let app_state = web::Data::new(AppState {
         db: Mutex::new(Some(mongo_client)),
     });
+
+    let timestamp = 1704326400;
+    let formatted_time = format_timestamp(timestamp);
+    let time2 = format_timestamp(1704412800);
+    println!("Formatted time: {}", formatted_time);
+    println!("Formatted time: {}", time2);
 
     println!("Server starting at http://127.0.0.1:8080");
 
