@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use bson::oid::ObjectId;
+use crate::services::fetchDepthPriceHistory::Interval;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DepthPriceHistory {
@@ -19,34 +20,25 @@ pub struct DepthPriceHistory {
     pub luvi: f64,
 }
 
-impl DepthPriceHistory {
-    pub fn new(
-        start_time: String,
-        end_time: String,
-        asset_depth: f64,
-        rune_depth: f64,
-        asset_price: f64,
-        asset_price_usd: f64,
-        liquidity_units: f64,
-        members_count: f64,
-        synth_units: f64,
-        synth_supply: f64,
-        units: f64,
-        luvi: f64,
-    ) -> Self {
-        Self {
-            start_time,
-            end_time,
-            asset_depth,
-            rune_depth,
-            asset_price,
-            asset_price_usd,
-            liquidity_units,
-            members_count,
-            synth_units,
-            synth_supply,
-            units,
-            luvi,
-        }
+impl TryFrom<Interval> for DepthPriceHistory {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(interval: Interval) -> Result<Self, Self::Error> {
+        Ok(Self {
+            _id: ObjectId::new(),
+            pool: "BTC.BTC".to_string(),
+            start_time: interval.start_time.trim().parse::<i64>()?,
+            end_time: interval.end_time.trim().parse::<i64>()?,
+            asset_depth: interval.asset_depth.trim().parse::<f64>()?,
+            rune_depth: interval.rune_depth.trim().parse::<f64>()?,
+            asset_price: interval.asset_price.trim().parse::<f64>()?,
+            asset_price_usd: interval.asset_price_usd.trim().parse::<f64>()?,
+            liquidity_units: interval.liquidity_units.trim().parse::<f64>()?,
+            members_count: interval.members_count.trim().parse::<f64>()?,
+            synth_units: interval.synth_units.trim().parse::<f64>()?,
+            synth_supply: interval.synth_supply.trim().parse::<f64>()?,
+            units: interval.units.trim().parse::<f64>()?,
+            luvi: interval.luvi.trim().parse::<f64>()?,
+        })
     }
 }

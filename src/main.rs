@@ -31,19 +31,31 @@ async fn health_check() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Create MongoDB client
     let mongo_client = services::db::Mongodb::connect_to_mongodb()
         .await
         .expect("Failed to connect to MongoDB");
 
+    // Use the client before wrapping it in AppState
+    let start_time = 1704326400;
+    let pool = String::from("BTC.BTC");
+    let interval = String::from("hour");
+
+    println!("Starting fetch from: {}", format_timestamp(start_time));
+
+    if let Err(e) = services::fetchDepthPriceHistory::fetch_depth_price_history(
+        &pool,
+        &interval,
+        start_time,
+        &mongo_client  // Use the client directly before wrapping
+    ).await {
+        println!("Error fetching data: {}", e);
+    }
+
+    // Now wrap the client for the web server
     let app_state = web::Data::new(AppState {
         db: Mutex::new(Some(mongo_client)),
     });
-
-    let timestamp = 1704326400;
-    let formatted_time = format_timestamp(timestamp);
-    let time2 = format_timestamp(1704412800);
-    println!("Formatted time: {}", formatted_time);
-    println!("Formatted time: {}", time2);
 
     println!("Server starting at http://127.0.0.1:8080");
 
