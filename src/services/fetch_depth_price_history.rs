@@ -1,11 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use reqwest::Client;
-use mongodb::{Client as MongoClient, Collection};
+use mongodb::Client as MongoClient;
 use crate::services::db::Mongodb;
-
-// static POOL: &str = "BTC.BTC";
-// static apiurl: &str = "https://midgard.ninerealms.com/v2/history/depths/BTC.BTC/?interval=5min&count=400&from=1606780800";
+use crate::models::depth_price_history::DepthPriceHistory;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Meta {
@@ -71,29 +68,38 @@ pub struct PriceHistory {
     pub intervals: Vec<Interval>,
 }
 
-pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Result<(), Box<dyn std::error::Error>> {
-    let db = Mongodb::get_depth_price_db(client).await;
-    let collection: Collection<Interval> = db.collection("depth_price_intervals");
-    
-    use mongodb::options::IndexOptions;
-    use mongodb::bson::doc;
-    
-    let options = IndexOptions::builder().unique(true).build();
-    // collection.create_index(
-    //     doc! { "startTime": 1, "endTime": 1 },
-    //     Some(options)
-    // ).await?;
-    
-    Mongodb::insert_many_documents(&collection, &intervals).await?;
-    println!("Successfully stored {} intervals in database", intervals.len());
-    
+#[allow(unused_variables)]
+pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>, pool: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let db = Mongodb::new(client.clone());
+    let depth_collection = &db.depth_history;
+    let mut success_count = 0;
+    let mut error_count = 0;
+
+    for interval in intervals {
+        match DepthPriceHistory::try_from(interval) {
+            Ok(depth_history) => {
+                match db.insert_document(depth_collection, depth_history).await {
+                    Ok(_) => success_count += 1,
+                    Err(e) => {
+                        error_count += 1;
+                        eprintln!("Error inserting document: {}", e);
+                    }
+                }
+            },
+            Err(e) => {
+                error_count += 1;
+                eprintln!("Error converting interval: {}", e);
+            }
+        }
+    }
+
+    println!("Batch complete: {} documents inserted successfully, {} failed", success_count, error_count);
     Ok(())
 }
 
 pub async fn fetch_depth_price_history(pool: &str, interval: &str, start_time: i64, mongo_client: &MongoClient) -> Result<(), Box<dyn std::error::Error>> {
     let mut current_time = start_time;
-    let client = Client::new();
-
+    
     loop {
         let url = format!(
             "https://midgard.ninerealms.com/v2/history/depths/{}?interval={}&from={}&count=400",
@@ -104,7 +110,7 @@ pub async fn fetch_depth_price_history(pool: &str, interval: &str, start_time: i
         
         println!("Fetching URL: {}", url);
         
-        let response = client.get(&url).send().await?;
+        let response = reqwest::get(&url).await?;
         println!("Response status: {}", response.status());
         
         if !response.status().is_success() {
@@ -120,19 +126,12 @@ pub async fn fetch_depth_price_history(pool: &str, interval: &str, start_time: i
                     break;
                 }
                 
-                println!("Number of intervals in this batch: {}", price_history.intervals.len());
+                println!("Number of intervals to process: {}", price_history.intervals.len());
                 
-                // Parse end_time with better error handling
-                let end_time = match price_history.meta.end_time.parse::<i64>() {
-                    Ok(time) => time,
-                    Err(e) => {
-                        println!("Failed to parse end_time: {}", e);
-                        return Err(Box::new(e));
-                    }
-                };
-
-                // Store data before checking time to ensure we don't lose the last batch
-                store_to_db(mongo_client, price_history.intervals).await?;
+                let end_time = price_history.meta.end_time.parse::<i64>()?;
+                
+                // Store data in MongoDB one by one
+                store_to_db(mongo_client, price_history.intervals, pool).await?;
                 
                 let current_utc: DateTime<Utc> = Utc::now();
                 let current_timestamp = current_utc.timestamp();

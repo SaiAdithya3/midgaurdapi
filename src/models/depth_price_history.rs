@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
-use bson::oid::ObjectId;
-use crate::services::fetchDepthPriceHistory::Interval;
+use mongodb::bson::oid::ObjectId;
+
+use crate::services::fetch_depth_price_history::Interval;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DepthPriceHistory {

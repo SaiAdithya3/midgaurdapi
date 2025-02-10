@@ -1,9 +1,6 @@
-use chrono::{DateTime, TimeZone, Utc};
-mod services {
-    pub mod db;
-    pub mod fetchDepthPriceHistory;
-}
-
+use chrono::{TimeZone, Utc};
+pub mod services;
+pub mod models;
 use actix_web::{web, App, HttpServer, HttpResponse, Responder};
 use std::sync::Mutex;
 use mongodb::Client;
@@ -13,6 +10,9 @@ use mongodb::Client;
 struct AppState {
     db: Mutex<Option<Client>>,
 }
+pub const RUNEPOOL_START_TIME : i64= 1721865600; 
+// pub const RUNEPOOL_START_TIME : i64= 1648771200; 
+const ONE_HOUR_SECS: u64 = 3_600;
 
 pub fn format_timestamp(timestamp: i64) -> String {
     let datetime = Utc.timestamp_opt(timestamp, 0).unwrap();
@@ -31,23 +31,23 @@ async fn health_check() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Create MongoDB client
     let mongo_client = services::db::Mongodb::connect_to_mongodb()
         .await
         .expect("Failed to connect to MongoDB");
 
-    // Use the client before wrapping it in AppState
+    let one_hour_ago = Utc::now().timestamp() - ONE_HOUR_SECS as i64;
+    let start_timer = one_hour_ago;
+    
     let start_time = 1704326400;
     let pool = String::from("BTC.BTC");
     let interval = String::from("hour");
-
     println!("Starting fetch from: {}", format_timestamp(start_time));
 
-    if let Err(e) = services::fetchDepthPriceHistory::fetch_depth_price_history(
-        &pool,
+    if let Err(e) = services::fetch_runepool_members_units_history::fetch_runepool_members_units_history(
+        // &pool,
         &interval,
-        start_time,
-        &mongo_client  // Use the client directly before wrapping
+        RUNEPOOL_START_TIME,
+        &mongo_client  
     ).await {
         println!("Error fetching data: {}", e);
     }
