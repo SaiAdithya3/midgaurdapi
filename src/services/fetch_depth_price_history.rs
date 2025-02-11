@@ -68,7 +68,6 @@ pub struct PriceHistory {
     pub intervals: Vec<Interval>,
 }
 
-#[allow(unused_variables)]
 pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>, pool: &str) -> Result<(), Box<dyn std::error::Error>> {
     let db = Mongodb::new(client.clone());
     let depth_collection = &db.depth_history;

@@ -10,8 +10,8 @@ use mongodb::Client;
 struct AppState {
     db: Mutex<Option<Client>>,
 }
-pub const RUNEPOOL_START_TIME : i64= 1721865600; 
-// pub const RUNEPOOL_START_TIME : i64= 1648771200; 
+// pub const RUNEPOOL_START_TIME : i64= 1721865600; 
+pub const RUNEPOOL_START_TIME : i64= 1648771200; 
 const ONE_HOUR_SECS: u64 = 3_600;
 
 pub fn format_timestamp(timestamp: i64) -> String {
@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
     let interval = String::from("hour");
     println!("Starting fetch from: {}", format_timestamp(start_time));
 
-    if let Err(e) = services::fetch_runepool_members_units_history::fetch_runepool_members_units_history(
+    if let Err(e) = services::fetch_earnings_history::fetch_earnings_history(
         // &pool,
         &interval,
         RUNEPOOL_START_TIME,
