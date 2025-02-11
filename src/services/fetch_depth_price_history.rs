@@ -68,7 +68,7 @@ pub struct PriceHistory {
     pub intervals: Vec<Interval>,
 }
 
-pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>, pool: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>, _pool: &str) -> Result<(), Box<dyn std::error::Error>> {
     let db = Mongodb::new(client.clone());
     let depth_collection = &db.depth_history;
     let mut success_count = 0;
@@ -129,7 +129,6 @@ pub async fn fetch_depth_price_history(pool: &str, interval: &str, start_time: i
                 
                 let end_time = price_history.meta.end_time.parse::<i64>()?;
                 
-                // Store data in MongoDB one by one
                 store_to_db(mongo_client, price_history.intervals, pool).await?;
                 
                 let current_utc: DateTime<Utc> = Utc::now();

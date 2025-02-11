@@ -39,7 +39,6 @@ impl Mongodb {
         }
     }
 
-    // Collection getters remain the same...
 
     pub async fn insert_document<T>(&self, collection: &Collection<T>, document: T) -> Result<InsertOneResult, MongoError>
     where
@@ -53,27 +52,12 @@ impl Mongodb {
         T: serde::Serialize,
     {
         let options = InsertManyOptions::builder()
-            .ordered(false) // Allow parallel insertions
+            .ordered(false) 
             .build();
 
         collection.insert_many(documents, Some(options)).await
     }
 
-    // pub async fn batch_insert<T>(&self, collection: &Collection<T>, documents: Vec<T>, batch_size: usize) -> Result<Vec<InsertManyResult>, MongoError>
-    // where
-    //     T: serde::Serialize + Send + Sync,
-    // {
-    //     let mut results = Vec::new();
-        
-    //     for chunk in documents.chunks(batch_size) {
-    //         match self.insert_many_documents(collection, chunk.to_vec()).await {
-    //             Ok(result) => results.push(result),
-    //             Err(e) => eprintln!("Error inserting batch: {}", e),
-    //         }
-    //     }
-        
-    //     Ok(results)
-    // }
 
     pub async fn connect_to_mongodb() -> Result<Client, MongoError> {
         dotenv().ok();

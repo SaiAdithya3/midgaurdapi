@@ -1,11 +1,12 @@
 use chrono::{TimeZone, Utc};
 pub mod services;
 pub mod models;
-use actix_web::{web, App, HttpServer, HttpResponse, Responder};
+use actix_web::{web, web::Data, App, HttpServer, HttpResponse, Responder};
 use std::sync::Mutex;
 use mongodb::Client;
+mod routes;
+// use actix_web::web::Data;
 
-// Wrap MongoDB client in app state
 #[allow(dead_code)]
 struct AppState {
     db: Mutex<Option<Client>>,
@@ -31,9 +32,13 @@ async fn health_check() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    std::env::set_var("RUST_LOG", "debug");
+    env_logger::init();
     let mongo_client = services::db::Mongodb::connect_to_mongodb()
         .await
         .expect("Failed to connect to MongoDB");
+    let db = services::db::Mongodb::new(mongo_client);
+    let db_data = web::Data::new(db);
 
     let one_hour_ago = Utc::now().timestamp() - ONE_HOUR_SECS as i64;
     let start_timer = one_hour_ago;
@@ -43,27 +48,28 @@ async fn main() -> std::io::Result<()> {
     let interval = String::from("hour");
     println!("Starting fetch from: {}", format_timestamp(start_time));
 
-    if let Err(e) = services::fetch_earnings_history::fetch_earnings_history(
-        // &pool,
-        &interval,
-        RUNEPOOL_START_TIME,
-        &mongo_client  
-    ).await {
-        println!("Error fetching data: {}", e);
-    }
+    // if let Err(e) = services::fetch_earnings_history::fetch_earnings_history(
+    //     // &pool,
+    //     &interval,
+    //     RUNEPOOL_START_TIME,
+    //     &mongo_client  
+    // ).await {
+    //     println!("Error fetching data: {}", e);
+    // }
 
-    // Now wrap the client for the web server
-    let app_state = web::Data::new(AppState {
-        db: Mutex::new(Some(mongo_client)),
-    });
+    // let app_state = web::Data::new(AppState {
+    //     db: Mutex::new(Some(db_data)),
+    // });
 
     println!("Server starting at http://127.0.0.1:8080");
 
     HttpServer::new(move || {
-        App::new()
-            .app_data(app_state.clone())
+        App::new().app_data(db_data.clone())
             .route("/health", web::get().to(health_check))
             .service(home_route)
+            .service(routes::depth_history_routes::get_depth_history)
+        //     .service(handlers::get_earnings)
+        //    .service(handlers::get_earnings_pools)
     })
     .bind("127.0.0.1:8080")?
     .run()
