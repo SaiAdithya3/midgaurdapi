@@ -5,3 +5,17 @@
 5. write a cronjob to update the db for certain time with sending current time in params
 6. pagination in fetching
 7. same params as midgaurd
+
+
+// if let Err(e) = services::fetch_earnings_history::fetch_earnings_history(
+    //     // &pool,
+    //     &interval,
+    //     RUNEPOOL_START_TIME,
+    //     &mongo_client  
+    // ).await {
+    //     println!("Error fetching data: {}", e);
+    // }
+
+    // let app_state = web::Data::new(AppState {
+    //     db: Mutex::new(Some(db_data)),
+    // });

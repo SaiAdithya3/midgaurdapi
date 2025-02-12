@@ -1,11 +1,11 @@
 use chrono::{TimeZone, Utc};
 pub mod services;
 pub mod models;
-use actix_web::{web, web::Data, App, HttpServer, HttpResponse, Responder};
+use actix_web::{web::{self}, App, HttpResponse, HttpServer, Responder};
 use std::sync::Mutex;
 use mongodb::Client;
 mod routes;
-// use actix_web::web::Data;
+mod middleware;
 
 #[allow(dead_code)]
 struct AppState {
@@ -41,11 +41,11 @@ async fn main() -> std::io::Result<()> {
     let db_data = web::Data::new(db);
 
     let one_hour_ago = Utc::now().timestamp() - ONE_HOUR_SECS as i64;
-    let start_timer = one_hour_ago;
+    let _start_timer = one_hour_ago;
     
     let start_time = 1704326400;
-    let pool = String::from("BTC.BTC");
-    let interval = String::from("hour");
+    let _pool = String::from("BTC.BTC");
+    let _interval = String::from("hour");
     println!("Starting fetch from: {}", format_timestamp(start_time));
 
     // if let Err(e) = services::fetch_earnings_history::fetch_earnings_history(
@@ -65,6 +65,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new().app_data(db_data.clone())
+        
             .route("/health", web::get().to(health_check))
             .service(home_route)
             .service(routes::depth_history_routes::get_depth_history)
