@@ -69,6 +69,7 @@ async fn main() -> std::io::Result<()> {
             .route("/health", web::get().to(health_check))
             .service(home_route)
             .service(routes::depth_history_routes::get_depth_history)
+            .service(routes::swaps_history_routes::get_swaps_history)
         //     .service(handlers::get_earnings)
         //    .service(handlers::get_earnings_pools)
     })

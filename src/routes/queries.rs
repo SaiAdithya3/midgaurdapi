@@ -9,10 +9,12 @@ pub struct HistoryQueryParams {
     pub to: Option<i64>,
 }
 
+#[allow(unused)]
 pub fn validate_interval(interval: &str) -> bool {
     matches!(interval, "5min" | "hour" | "day" | "week" | "month" | "quarter" | "year")
 }
 
+#[allow(unused)]
 pub fn validate_count(count: i32) -> bool {
     count > 0 && count <= 400
 }
