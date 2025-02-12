@@ -1,6 +1,7 @@
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct HistoryQueryParams {
     pub interval: Option<String>,
     pub count: Option<i32>,
