@@ -1,6 +1,6 @@
-use actix_web::{dev::ServiceRequest, Error, error::ErrorBadRequest};
+use crate::routes::queries::{validate_count, validate_interval, HistoryQueryParams};
+use actix_web::{dev::ServiceRequest, error::ErrorBadRequest, Error};
 use serde_urlencoded;
-use crate::routes::queries::{HistoryQueryParams, validate_count, validate_interval};
 
 #[allow(dead_code)]
 pub async fn validate_query_params(req: ServiceRequest) -> Result<ServiceRequest, Error> {
@@ -20,9 +20,7 @@ pub async fn validate_query_params(req: ServiceRequest) -> Result<ServiceRequest
                 }
             }
             Ok(req)
-        },
-        Err(_) => {
-            Ok(req)
         }
+        Err(_) => Ok(req),
     }
 }

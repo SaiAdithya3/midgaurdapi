@@ -8,11 +8,18 @@ pub struct HistoryQueryParams {
     pub pool: Option<String>,
     pub from: Option<i64>,
     pub to: Option<i64>,
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+    pub sort_by: Option<String>,
+    pub order: Option<String>,
 }
 
 #[allow(unused)]
 pub fn validate_interval(interval: &str) -> bool {
-    matches!(interval, "5min" | "hour" | "day" | "week" | "month" | "quarter" | "year")
+    matches!(
+        interval,
+        "5min" | "hour" | "day" | "week" | "month" | "quarter" | "year"
+    )
 }
 
 #[allow(unused)]

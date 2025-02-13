@@ -1,13 +1,12 @@
 #![allow(unused_imports)]
-use actix_web::{get, web, HttpResponse, Result};
-use futures_util::TryStreamExt;
-use log::{error, debug};
-use mongodb::bson::doc;
-use chrono::Utc;
-use crate::routes::queries::HistoryQueryParams;
 use crate::database::db::Mongodb;
+use crate::routes::queries::HistoryQueryParams;
 use crate::utils::get_seconds_per_interval;
-
+use actix_web::{get, web, HttpResponse, Result};
+use chrono::Utc;
+use futures_util::TryStreamExt;
+use log::{debug, error};
+use mongodb::bson::doc;
 
 #[get("/api/history/earnings")]
 pub async fn get_earnings_history(
@@ -24,7 +23,18 @@ pub async fn get_earnings_history(
         _ => {}
     }
 
-    let seconds_per_interval = get_seconds_per_interval(query.interval.as_deref().unwrap_or("hour"));
+    let page = query.page.unwrap_or(1);
+    let limit = query.limit.unwrap_or(50).min(400);
+    let skip = (page - 1) * limit;
+
+    let sort_field = query.sort_by.as_deref().unwrap_or("startTime");
+    let sort_order = match query.order.as_deref().unwrap_or("asc") {
+        "desc" => -1,
+        _ => 1,
+    };
+
+    let seconds_per_interval =
+        get_seconds_per_interval(query.interval.as_deref().unwrap_or("hour"));
     let earnings_collection = &db.earnings_history;
     let pools_collection = &db.earnings_history_pools;
 
@@ -34,13 +44,25 @@ pub async fn get_earnings_history(
     } else {
         let current_time = Utc::now().timestamp();
         let count = query.count.unwrap_or(400) as i64;
-        match_stage.insert("start_time", doc! {
-            "$gte": current_time - (count * seconds_per_interval)
-        });
+        match_stage.insert(
+            "start_time",
+            doc! {
+                "$gte": current_time - (count * seconds_per_interval)
+            },
+        );
     }
     if let Some(to) = query.to {
         match_stage.insert("end_time", doc! { "$lte": to });
     }
+
+    let total_count = earnings_collection
+        .count_documents(match_stage.clone(), None)
+        .await
+        .map_err(|e| {
+            error!("Count error: {}", e);
+            actix_web::error::ErrorInternalServerError("Failed to get total count")
+        })?;
+    print!("Total count: {}", total_count);
 
     let pipeline = vec![
         doc! { "$match": match_stage },
@@ -85,14 +107,18 @@ pub async fn get_earnings_history(
             "runePriceUSD": 1,
             "earnings_id": 1
         }},
-        doc! { "$sort": { "startTime": 1 } },
-        doc! { "$limit": query.count.unwrap_or(400) as i64 }
+        doc! { "$sort": { sort_field: sort_order } },
+        doc! { "$skip": skip },
+        doc! { "$limit": limit },
     ];
 
-    let mut cursor = earnings_collection.aggregate(pipeline, None).await.map_err(|e| {
-        error!("Database error: {}", e);
-        actix_web::error::ErrorInternalServerError("Failed to fetch earnings history")
-    })?;
+    let mut cursor = earnings_collection
+        .aggregate(pipeline, None)
+        .await
+        .map_err(|e| {
+            error!("Database error: {}", e);
+            actix_web::error::ErrorInternalServerError("Failed to fetch earnings history")
+        })?;
 
     let mut intervals = Vec::new();
     let mut meta = doc! {};
@@ -109,11 +135,11 @@ pub async fn get_earnings_history(
             "liquidityEarnings",
             "liquidityFees",
             "runePriceUSD",
-        ].iter() {
+        ]
+        .iter()
+        {
             if let Some(value) = doc.get(field).and_then(|v| v.as_f64()) {
-                let current_sum = meta.get(field)
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0);
+                let current_sum = meta.get(field).and_then(|v| v.as_f64()).unwrap_or(0.0);
                 meta.insert(*field, current_sum + value);
             }
         }
@@ -124,10 +150,14 @@ pub async fn get_earnings_history(
                 "earnings_summary_id": earnings_id
             };
             let mut pools = Vec::new();
-            let mut pools_cursor = pools_collection.find(pools_filter, None).await.map_err(|e| {
-                error!("Database error fetching pools: {}", e);
-                actix_web::error::ErrorInternalServerError("Failed to fetch pools data")
-            })?;
+            let mut pools_cursor =
+                pools_collection
+                    .find(pools_filter, None)
+                    .await
+                    .map_err(|e| {
+                        error!("Database error fetching pools: {}", e);
+                        actix_web::error::ErrorInternalServerError("Failed to fetch pools data")
+                    })?;
 
             while let Some(pool_doc) = pools_cursor.try_next().await.map_err(|e| {
                 error!("Cursor error for pools: {}", e);
@@ -158,10 +188,7 @@ pub async fn get_earnings_history(
     }
 
     if count > 1 {
-        for field in [
-            "avgNodeCount",
-            "runePriceUSD",
-        ].iter() {
+        for field in ["avgNodeCount", "runePriceUSD"].iter() {
             if let Some(sum) = meta.get(field).and_then(|v| v.as_f64()) {
                 meta.insert(*field, sum / count as f64);
             }
@@ -170,7 +197,7 @@ pub async fn get_earnings_history(
 
     let first = intervals.first().unwrap();
     let last = intervals.last().unwrap();
-    
+
     // debug!("First document: {:?}", first);
     // debug!("Last document: {:?}", last);
 
@@ -179,9 +206,16 @@ pub async fn get_earnings_history(
 
     let response = doc! {
         "intervals": &intervals,
-        "meta": meta
+        "meta": meta,
+        "pagination": {
+            "currentPage": mongodb::bson::Bson::Int64(page),
+                "totalPages": mongodb::bson::Bson::Int32((total_count as f64 / limit as f64).ceil() as i32),
+                "totalRecords": mongodb::bson::Bson::Int64(total_count as i64),
+                "limit": mongodb::bson::Bson::Int64(limit),
+                "sortBy": sort_field,
+                "order": if sort_order == 1 { "asc" } else { "desc" }
+        }
     };
 
     Ok(HttpResponse::Ok().json(response))
 }
-

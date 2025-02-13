@@ -1,13 +1,13 @@
 #[allow(unused_imports)]
-use tokio::time::{interval, Duration};
-use cron::Schedule;
+use crate::utils::RUNEPOOL_START_TIME;
 use chrono::Utc;
-use log::{info, error};
+use cron::Schedule;
+use log::{error, info};
 use mongodb::Client;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicI64, Ordering};
 #[allow(unused_imports)]
-use crate::utils::RUNEPOOL_START_TIME;
+use tokio::time::{interval, Duration};
 
 // const INITIAL_START_TIME: i64 = 1707350400;
 const INITIAL_START_TIME: i64 = 1739487600;
@@ -30,7 +30,7 @@ pub async fn start_hourly_data_fetch(mongo_client: Client) {
         if let Some(datetime) = upcoming.next() {
             let current_time = Utc::now().timestamp();
             info!("Starting hourly data fetch at {}", current_time);
-            
+
             let client1 = mongo_client.clone();
             let client2 = mongo_client.clone();
             let client3 = mongo_client.clone();
@@ -39,19 +39,23 @@ pub async fn start_hourly_data_fetch(mongo_client: Client) {
 
             let fetch_tasks = tokio::join!(
                 super::fetch_earnings_history::fetch_earnings_history("hour", last_exec, &client1),
-                super::fetch_runepool_members_units_history::fetch_runepool_members_units_history("hour", last_exec, &client2),
-                super::fetch_depth_price_history::fetch_depth_price_history("BTC.BTC", "hour", last_exec, &client3),
+                super::fetch_runepool_members_units_history::fetch_runepool_members_units_history(
+                    "hour", last_exec, &client2
+                ),
+                super::fetch_depth_price_history::fetch_depth_price_history(
+                    "BTC.BTC", "hour", last_exec, &client3
+                ),
                 super::fetch_swaps_history::fetch_swaps_history("hour", last_exec, &client4)
             );
 
             match fetch_tasks {
                 (Ok(_), Ok(_), Ok(_), Ok(_)) => info!("All fetches completed successfully"),
-                _ => error!("One or more fetches failed")
+                _ => error!("One or more fetches failed"),
             }
 
             LAST_EXECUTION_TIME.store(current_time, Ordering::SeqCst);
             info!("Completed hourly data fetch at {}", datetime);
-            
+
             tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
         }
     }

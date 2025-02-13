@@ -1,13 +1,12 @@
-use serde::{Deserialize, Serialize};
 use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 
 use crate::services::fetch_swaps_history::Interval;
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SwapsHistory {
     pub _id: ObjectId,
-    pub pool: String, 
+    pub pool: String,
     pub start_time: i64,
     pub end_time: i64,
     pub to_asset_count: i64,

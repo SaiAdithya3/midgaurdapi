@@ -18,10 +18,8 @@ pub fn get_seconds_per_interval(interval: &str) -> i64 {
     }
 }
 
-
-
 // pub const ONE_HOUR_AGO = Utc::now().timestamp() - ONE_HOUR_SECS as i64;
 // pub const START_TIMER = ONE_HOUR_AGO;
 pub const ONE_HOUR_SECS: u64 = 3_600;
-// pub const RUNEPOOL_START_TIME : i64= 1721865600; 
-pub const RUNEPOOL_START_TIME : i64= 1648771200; 
+// pub const RUNEPOOL_START_TIME : i64= 1721865600;
+pub const RUNEPOOL_START_TIME: i64 = 1648771200;

@@ -1,11 +1,11 @@
-use actix_web::{get, web, HttpResponse, Result};
-use futures_util::TryStreamExt;
-use log::{error, debug};
-use mongodb::bson::doc;
-use chrono::Utc;
-use crate::routes::queries::HistoryQueryParams;
 use crate::database::db::Mongodb;
+use crate::routes::queries::HistoryQueryParams;
 use crate::utils::get_seconds_per_interval;
+use actix_web::{get, web, HttpResponse, Result};
+use chrono::Utc;
+use futures_util::TryStreamExt;
+use log::{debug, error};
+use mongodb::bson::doc;
 
 #[get("/api/history/swaps")]
 pub async fn get_swaps_history(
@@ -21,7 +21,16 @@ pub async fn get_swaps_history(
         }
         _ => {}
     }
-    let seconds_per_interval = get_seconds_per_interval(query.interval.as_deref().unwrap_or("hour"));
+    let page = query.page.unwrap_or(1);
+    let limit = query.limit.unwrap_or(50).min(400);
+    let skip = (page - 1) * limit;
+    let sort_field = query.sort_by.as_deref().unwrap_or("startTime");
+    let sort_order = match query.order.as_deref().unwrap_or("asc") {
+        "desc" => -1,
+        _ => 1,
+    };
+    let seconds_per_interval =
+        get_seconds_per_interval(query.interval.as_deref().unwrap_or("hour"));
     let collection = &db.swaps_history;
 
     let mut match_stage = doc! {};
@@ -30,14 +39,25 @@ pub async fn get_swaps_history(
     } else {
         let current_time = Utc::now().timestamp();
         let count = query.count.unwrap_or(400) as i64;
-        match_stage.insert("start_time", doc! {
-            "$gte": current_time - (count * seconds_per_interval)
-        });
+        match_stage.insert(
+            "start_time",
+            doc! {
+                "$gte": current_time - (count * seconds_per_interval)
+            },
+        );
     }
     // 35
     if let Some(to) = query.to {
         match_stage.insert("end_time", doc! { "$lte": to });
     }
+
+    let total_count = collection
+        .count_documents(match_stage.clone(), None)
+        .await
+        .map_err(|e| {
+            error!("Count error: {}", e);
+            actix_web::error::ErrorInternalServerError("Failed to get total count")
+        })?;
 
     let pipeline = vec![
         doc! { "$match": match_stage },
@@ -140,8 +160,9 @@ pub async fn get_swaps_history(
             "averageSlip": 1,
             "runePriceUSD": 1,
         }},
-        doc! { "$sort": { "startTime": 1 } },
-        doc! { "$limit": query.count.unwrap_or(400) as i64 }
+        doc! { "$sort": { sort_field: sort_order } },
+        doc! { "$skip": skip },
+        doc! { "$limit": limit },
     ];
 
     let mut cursor = collection.aggregate(pipeline, None).await.map_err(|e| {
@@ -166,7 +187,7 @@ pub async fn get_swaps_history(
 
     let first = intervals.first().unwrap();
     let last = intervals.last().unwrap();
-    
+
     // debug!("First document: {:?}", first);
     debug!("Last document: {:?}", last);
 
@@ -209,6 +230,14 @@ pub async fn get_swaps_history(
             "synthRedeemAverageSlip": first.get_f64("synthRedeemAverageSlip").unwrap(),
             "averageSlip": first.get_f64("averageSlip").unwrap(),
             "runePriceUSD": first.get_f64("runePriceUSD").unwrap(),
+            "pagination": {
+            "currentPage": mongodb::bson::Bson::Int64(page),
+                "totalPages": mongodb::bson::Bson::Int32((total_count as f64 / limit as f64).ceil() as i32),
+                "totalRecords": mongodb::bson::Bson::Int64(total_count as i64),
+                "limit": mongodb::bson::Bson::Int64(limit),
+                "sortBy": sort_field,
+                "order": if sort_order == 1 { "asc" } else { "desc" }
+        }
         }
     };
 

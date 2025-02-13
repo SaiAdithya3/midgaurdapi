@@ -1,10 +1,10 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use mongodb::Client as MongoClient;
 use crate::database::db::Mongodb;
 use crate::models::earnings_history::{EarningsHistory, EarningsSummaryRequest};
 use crate::models::earnings_history_pools::{EarningsHistoryPools, PoolEarningsRequest};
+use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
+use mongodb::Client as MongoClient;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,7 +15,7 @@ pub struct Pool {
     pub total_liquidity_fees_rune: String,
     pub saver_earning: String,
     pub rewards: String,
-    pub earnings: String
+    pub earnings: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -33,7 +33,7 @@ pub struct Meta {
     pub avg_node_count: String,
     #[serde(rename = "runePriceUSD")]
     pub rune_price_usd: Option<String>,
-    pub pools: Vec<Pool>
+    pub pools: Vec<Pool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,7 +50,7 @@ pub struct Interval {
     pub liquidity_earnings: String,
     pub avg_node_count: String,
     pub rune_price_usd: Option<String>,
-    pub pools: Vec<Pool>
+    pub pools: Vec<Pool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,7 +59,10 @@ pub struct ApiResponse {
     pub intervals: Vec<Interval>,
 }
 
-pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn store_to_db(
+    client: &MongoClient,
+    intervals: Vec<Interval>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let db = Mongodb::new(client.clone());
     let earnings_collection = &db.earnings_history;
     let pools_collection = &db.earnings_history_pools;
@@ -93,7 +96,11 @@ pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Resu
         // Create earnings history with safe parsing
         let earning_history = EarningsHistory {
             _id: ObjectId::new(),
-            start_time: earnings_summary.start_time.trim().parse::<i64>().unwrap_or(0),
+            start_time: earnings_summary
+                .start_time
+                .trim()
+                .parse::<i64>()
+                .unwrap_or(0),
             end_time: earnings_summary.end_time.trim().parse::<i64>().unwrap_or(0),
             block_rewards: parse_float(&earnings_summary.block_rewards),
             avg_node_count: parse_float(&earnings_summary.avg_node_count),
@@ -103,7 +110,10 @@ pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Resu
             rune_price_usd: parse_float(&earnings_summary.rune_price_usd),
         };
 
-        match db.insert_document(earnings_collection, earning_history).await {
+        match db
+            .insert_document(earnings_collection, earning_history)
+            .await
+        {
             Ok(result) => {
                 success_count += 1;
                 for pool in interval.pools {
@@ -124,7 +134,9 @@ pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Resu
                         pool: pool_entry.pool,
                         asset_liquidity_fees: parse_float(&pool_entry.asset_liquidity_fees),
                         rune_liquidity_fees: parse_float(&pool_entry.rune_liquidity_fees),
-                        total_liquidity_fees_rune: parse_float(&pool_entry.total_liquidity_fees_rune),
+                        total_liquidity_fees_rune: parse_float(
+                            &pool_entry.total_liquidity_fees_rune,
+                        ),
                         saver_earning: parse_float(&pool_entry.saver_earning),
                         rewards: parse_float(&pool_entry.rewards),
                         start_time: pool_entry.start_time.trim().parse::<i64>().unwrap_or(0),
@@ -140,7 +152,7 @@ pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Resu
                         }
                     }
                 }
-            },
+            }
             Err(e) => {
                 error_count += 1;
                 eprintln!("Error inserting earnings document: {}", e);
@@ -148,47 +160,60 @@ pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Resu
         }
     }
 
-    println!("Batch complete: {} earnings documents inserted successfully, {} failed", success_count, error_count);
-    println!("Pool entries: {} inserted successfully, {} failed", pools_success, pools_error);
+    println!(
+        "Batch complete: {} earnings documents inserted successfully, {} failed",
+        success_count, error_count
+    );
+    println!(
+        "Pool entries: {} inserted successfully, {} failed",
+        pools_success, pools_error
+    );
     Ok(())
 }
 
-pub async fn fetch_earnings_history(interval: &str, start_time: i64, mongo_client: &MongoClient) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn fetch_earnings_history(
+    interval: &str,
+    start_time: i64,
+    mongo_client: &MongoClient,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut current_time = start_time;
-    
+
     loop {
         let url = format!(
             "https://midgard.ninerealms.com/v2/history/earnings?interval={}&from={}&count=400",
             // pool,
-            interval, 
+            interval,
             current_time
         );
-        
+
         println!("Fetching URL: {}", url);
-        
+
         let response = reqwest::get(&url).await?;
         println!("Response status: {}", response.status());
-        
+
         if !response.status().is_success() {
             return Err(format!("Request failed with status: {}", response.status()).into());
         }
-        
+
         let text = response.text().await?;
-        
+
         match serde_json::from_str::<ApiResponse>(&text) {
             Ok(price_history) => {
                 if price_history.intervals.is_empty() {
                     println!("No more intervals to process");
                     break;
                 }
-                
-                println!("Number of intervals to process: {}", price_history.intervals.len());
-                
+
+                println!(
+                    "Number of intervals to process: {}",
+                    price_history.intervals.len()
+                );
+
                 let end_time = price_history.meta.end_time.parse::<i64>()?;
-                
+
                 // Store data in MongoDB one by one
                 store_to_db(mongo_client, price_history.intervals).await?;
-                
+
                 let current_utc: DateTime<Utc> = Utc::now();
                 let current_timestamp = current_utc.timestamp();
 
@@ -198,7 +223,7 @@ pub async fn fetch_earnings_history(interval: &str, start_time: i64, mongo_clien
 
                 current_time = end_time;
                 tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-            },
+            }
             Err(e) => {
                 println!("Failed to parse JSON: {}", e);
                 println!("Response text: {}", text);

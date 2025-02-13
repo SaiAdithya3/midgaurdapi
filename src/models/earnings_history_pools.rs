@@ -6,26 +6,26 @@ use std::convert::TryFrom;
 pub struct EarningsHistoryPools {
     pub _id: ObjectId,
     pub pool: String,
-    pub asset_liquidity_fees: f64,         
-    pub rune_liquidity_fees: f64,          
-    pub total_liquidity_fees_rune: f64,    
-    pub saver_earning: f64,                 
+    pub asset_liquidity_fees: f64,
+    pub rune_liquidity_fees: f64,
+    pub total_liquidity_fees_rune: f64,
+    pub saver_earning: f64,
     pub rewards: f64,
-    pub start_time: i64,               
-    pub end_time: i64,                          
+    pub start_time: i64,
+    pub end_time: i64,
     pub earnings_summary_id: ObjectId,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct PoolEarningsRequest {
     pub pool: String,
-    pub asset_liquidity_fees: String,         
-    pub rune_liquidity_fees: String,          
-    pub total_liquidity_fees_rune: String,    
-    pub saver_earning: String,                 
-    pub rewards: String, 
-    pub start_time: String,               
-    pub end_time: String,                         
+    pub asset_liquidity_fees: String,
+    pub rune_liquidity_fees: String,
+    pub total_liquidity_fees_rune: String,
+    pub saver_earning: String,
+    pub rewards: String,
+    pub start_time: String,
+    pub end_time: String,
     pub earnings_summary_id: ObjectId,
 }
 
