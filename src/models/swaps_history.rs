@@ -1,9 +1,10 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::services::fetch_swaps_history::Interval;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct SwapsHistory {
     pub _id: ObjectId,
     pub pool: String,

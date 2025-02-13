@@ -17,3 +17,5 @@ log = "0.4"
 env_logger = "0.10.0"
 serde_urlencoded = "0.7"
 cron = "0.12.1"
+utoipa = { version = "4.1", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "7", features = ["actix-web"] }

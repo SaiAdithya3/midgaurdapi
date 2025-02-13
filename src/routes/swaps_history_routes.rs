@@ -7,6 +7,27 @@ use futures_util::TryStreamExt;
 use log::{debug, error};
 use mongodb::bson::doc;
 
+#[utoipa::path(
+    get,
+    path = "/api/history/swaps",
+    params(
+        ("interval" = Option<String>, Query, description = "Time interval (hour, day, week, etc.)"),
+        ("count" = Option<i32>, Query, description = "Number of intervals"),
+        ("from" = Option<i64>, Query, description = "Start timestamp"),
+        ("to" = Option<i64>, Query, description = "End timestamp"),
+        ("page" = Option<i64>, Query, description = "Page number"),
+        ("limit" = Option<i64>, Query, description = "Records per page"),
+        ("sort_by" = Option<String>, Query, description = "Field to sort by"),
+        ("order" = Option<String>, Query, description = "Sort order (asc/desc)")
+    ),
+    responses(
+        (status = 200, description = "Successfully retrieved swaps history", body = SwapsHistory),
+        (status = 404, description = "No swaps history found"),
+        (status = 400, description = "Invalid request parameters"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Swaps History"
+)]
 #[get("/api/history/swaps")]
 pub async fn get_swaps_history(
     db: web::Data<Mongodb>,

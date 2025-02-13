@@ -7,6 +7,26 @@ use futures_util::TryStreamExt;
 use log::error;
 use mongodb::bson::doc;
 
+#[utoipa::path(
+    get,
+    path = "/api/history/runepool",
+    params(
+        ("interval" = Option<String>, Query, description = "Time interval (hour, day, week, etc.)"),
+        ("count" = Option<i32>, Query, description = "Number of intervals"),
+        ("from" = Option<i64>, Query, description = "Start timestamp"),
+        ("to" = Option<i64>, Query, description = "End timestamp"),
+        ("page" = Option<i64>, Query, description = "Page number"),
+        ("limit" = Option<i64>, Query, description = "Records per page"),
+        ("sort_by" = Option<String>, Query, description = "Field to sort by"),
+        ("order" = Option<String>, Query, description = "Sort order (asc/desc)")
+    ),
+    responses(
+        (status = 200, description = "Successfully retrieved runepool history", body = RunepoolMembersUnitsHistory),
+        (status = 404, description = "No runepool history found"),
+        (status = 400, description = "Invalid request parameters")
+    ),
+    tag = "Rune Pool History"
+)]
 #[get("/api/history/runepool")]
 pub async fn get_runepool_history(
     db: web::Data<Mongodb>,

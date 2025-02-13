@@ -1,9 +1,10 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::services::fetch_runepool_members_units_history::Interval;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct RunePoolTotalMembersHistory {
     pub _id: ObjectId,
     // pub pool: String,

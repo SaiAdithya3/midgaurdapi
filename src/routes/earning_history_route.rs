@@ -1,44 +1,59 @@
 #![allow(unused_imports)]
 use crate::database::db::Mongodb;
 use crate::routes::queries::HistoryQueryParams;
-use crate::utils::get_seconds_per_interval;
 use actix_web::{get, web, HttpResponse, Result};
 use chrono::Utc;
 use futures_util::TryStreamExt;
 use log::{debug, error};
 use mongodb::bson::doc;
+use crate::utils::{get_seconds_per_interval, build_match_stage, handle_pagination_and_sorting};
 
+
+#[utoipa::path(
+    get,
+    path = "/api/history/earnings",
+    params(
+        ("interval" = Option<String>, Query, description = "Time interval (hour, day, week, etc.)"),
+        ("count" = Option<i32>, Query, description = "Number of intervals"),
+        ("from" = Option<i64>, Query, description = "Start timestamp"),
+        ("to" = Option<i64>, Query, description = "End timestamp"),
+        ("page" = Option<i64>, Query, description = "Page number"),
+        ("limit" = Option<i64>, Query, description = "Records per page"),
+        ("sort_by" = Option<String>, Query, description = "Field to sort by"),
+        ("order" = Option<String>, Query, description = "Sort order (asc/desc)")
+    ),
+    responses(
+        (status = 200, description = "Successfully retrieved earnings history", body = EarningsHistory),
+        (status = 404, description = "No earnings history found"),
+        (status = 400, description = "Invalid request parameters"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Earnings History"
+)]
 #[get("/api/history/earnings")]
 pub async fn get_earnings_history(
     db: web::Data<Mongodb>,
     query: web::Query<HistoryQueryParams>,
 ) -> Result<HttpResponse> {
-    match (&query.interval, query.count) {
-        (Some(_), None) | (None, Some(_)) => {
-            return Ok(HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Both interval and count must be provided together",
-                "status": 400
-            })));
-        }
-        _ => {}
-    }
+    // match (&query.interval, query.count) {
+    //     (Some(_), None) | (None, Some(_)) => {
+    //         return Ok(HttpResponse::BadRequest().json(serde_json::json!({
+    //             "error": "Both interval and count must be provided together",
+    //             "status": 400
+    //         })));
+    //     }
+    //     _ => {}
+    // }
 
-    let page = query.page.unwrap_or(1);
-    let limit = query.limit.unwrap_or(50).min(400);
-    let skip = (page - 1) * limit;
-
-    let sort_field = query.sort_by.as_deref().unwrap_or("startTime");
-    let sort_order = match query.order.as_deref().unwrap_or("asc") {
-        "desc" => -1,
-        _ => 1,
-    };
-
+    let (page, skip, limit, sort_field, sort_order) = handle_pagination_and_sorting(&query);
+   
     let seconds_per_interval =
         get_seconds_per_interval(query.interval.as_deref().unwrap_or("hour"));
     let earnings_collection = &db.earnings_history;
     let pools_collection = &db.earnings_history_pools;
 
     let mut match_stage = doc! {};
+    // let mut match_stage = build_match_stage(&query, seconds_per_interval);
     if let Some(from) = query.from {
         match_stage.insert("start_time", doc! { "$gte": from });
     } else {
@@ -107,7 +122,7 @@ pub async fn get_earnings_history(
             "runePriceUSD": 1,
             "earnings_id": 1
         }},
-        doc! { "$sort": { sort_field: sort_order } },
+        doc! { "$sort": { sort_field.clone(): sort_order } },
         doc! { "$skip": skip },
         doc! { "$limit": limit },
     ];
