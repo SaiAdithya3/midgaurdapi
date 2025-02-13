@@ -1,13 +1,12 @@
 #![allow(unused_imports)]
 use crate::database::db::Mongodb;
 use crate::routes::queries::HistoryQueryParams;
+use crate::utils::{build_match_stage, get_seconds_per_interval, handle_pagination_and_sorting};
 use actix_web::{get, web, HttpResponse, Result};
 use chrono::Utc;
 use futures_util::TryStreamExt;
 use log::{debug, error};
 use mongodb::bson::doc;
-use crate::utils::{get_seconds_per_interval, build_match_stage, handle_pagination_and_sorting};
-
 
 #[utoipa::path(
     get,
@@ -46,7 +45,7 @@ pub async fn get_earnings_history(
     // }
 
     let (page, skip, limit, sort_field, sort_order) = handle_pagination_and_sorting(&query);
-   
+
     let seconds_per_interval =
         get_seconds_per_interval(query.interval.as_deref().unwrap_or("hour"));
     let earnings_collection = &db.earnings_history;

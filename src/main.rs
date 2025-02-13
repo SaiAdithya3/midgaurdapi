@@ -4,16 +4,16 @@ use actix_web::{
     App, HttpResponse, HttpServer, Responder,
 };
 use mongodb::Client;
-use utoipa::OpenApi;
 use std::env;
 use tokio::sync::Mutex;
+use utoipa::OpenApi;
 pub mod database;
+pub mod docs;
 pub mod middleware;
 pub mod models;
 pub mod routes;
 pub mod services;
 pub mod utils;
-pub mod docs;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[allow(dead_code)]
@@ -54,10 +54,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(db_data.clone())
-            .service(
-                SwaggerUi::new("/docs/{_:.*}")
-                    .url("/api/openapi.json", api_docs.clone()),
-            )
+            .service(SwaggerUi::new("/docs/{_:.*}").url("/api/openapi.json", api_docs.clone()))
             .route("/health", web::get().to(health_check))
             .service(home_route)
             .service(routes::depth_history_routes::get_depth_history)

@@ -2,10 +2,10 @@ use crate::database::db::Mongodb;
 use crate::routes::queries::HistoryQueryParams;
 use actix_web::{get, web, HttpResponse, Result};
 // use chrono::Utc;
+use crate::utils::{build_match_stage, get_seconds_per_interval, handle_pagination_and_sorting};
 use futures_util::TryStreamExt;
 use log::error;
 use mongodb::bson::{doc, Bson};
-use crate::utils::{get_seconds_per_interval, build_match_stage, handle_pagination_and_sorting};
 
 #[utoipa::path(
     get,
@@ -84,7 +84,6 @@ pub async fn get_depth_history(
 
     Ok(HttpResponse::Ok().json(response))
 }
-
 
 fn build_aggregation_pipeline(
     match_stage: mongodb::bson::Document,
@@ -177,8 +176,8 @@ fn build_meta_response(
             "totalPages": Bson::Int32((total_count as f64 / limit as f64).ceil() as i32),
             "totalRecords": Bson::Int64(total_count),
             "limit": Bson::Int64(limit),
-            "sortBy": "startTime", 
-            "order": "asc"  
+            "sortBy": "startTime",
+            "order": "asc"
         }
     }
 }

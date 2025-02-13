@@ -3,7 +3,6 @@ use chrono::{TimeZone, Utc};
 use crate::routes::queries::HistoryQueryParams;
 use mongodb::bson::doc;
 
-
 pub fn format_timestamp(timestamp: i64) -> String {
     let datetime = Utc.timestamp_opt(timestamp, 0).unwrap();
     datetime.format("%Y-%m-%d %H:%M:%S UTC").to_string()
@@ -31,7 +30,6 @@ pub fn build_match_stage(
     if let Some(pool_name) = pool {
         match_stage.insert("pool", pool_name);
     }
-    
 
     if let Some(from) = query.from {
         match_stage.insert("start_time", doc! { "$gte": from });
@@ -54,9 +52,7 @@ pub fn build_match_stage(
 }
 
 /// Helper function to handle pagination and sorting
-pub fn handle_pagination_and_sorting(
-    query: &HistoryQueryParams,
-) -> (i64, i64, i64, String, i32) {
+pub fn handle_pagination_and_sorting(query: &HistoryQueryParams) -> (i64, i64, i64, String, i32) {
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(50).min(400);
     let skip = (page - 1) * limit;
