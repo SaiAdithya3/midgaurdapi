@@ -13,11 +13,11 @@ GET /                  - Welcome message
 GET /health           - Service health check
 ``` 
 
-### 2. Historical Data Routes
+### 2. Data Routes
 
 #### Depth History
 
-``` code
+``` typescript
 GET /api/history/depth/{pool}
 ```
 Parameters:
@@ -27,20 +27,26 @@ Parameters:
 - from: i64 (Optional) - Start timestamp
 - to: i64 (Optional) - End timestamp
 - count: i32 (Optional) - Number of records (1-400)
+- page: i32 (Optional) - Page number
+- limit: i32 (Optional) - Limit per page
+- sort: String (Optional) - Sort by [start_time, end_time, asset_depth, rune_depth, asset_price, asset_price_usd]
+- order: String (Optional) - Order [asc, desc]
+```json
 Response:
 {
-"pool": String,
-"asset_depth": f64,
-"rune_depth": f64,
-"asset_price": f64,
-"asset_price_usd": f64,
-"start_time": i64,
-"end_time": i64
+    "pool": String,
+    "asset_depth": f64,
+    "rune_depth": f64,
+    "asset_price": f64,
+    "asset_price_usd": f64,
+    "start_time": i64,
+    "end_time": i64
 }
+```
 
 #### Earnings History
 
-``` code
+``` typescript
 GET /api/history/earnings
 ```
 
@@ -50,14 +56,20 @@ Parameters:
 - from: i64 (Optional) - Start timestamp
 - to: i64 (Optional) - End timestamp
 - count: i32 (Optional) - Number of records (1-400)
-Response:
-{
-"earnings": f64,
-"block_rewards": f64,
-"liquidity_fees": f64,
-"start_time": i64,
-"end_time": i64
+- page: i32 (Optional) - Page number
+- limit: i32 (Optional) - Limit per page
+- sort: String (Optional) - Sort by [start_time, end_time, earnings, block_rewards, liquidity_fees]
+- order: String (Optional) - Order [asc, desc]
+
+```json
+Response: {
+    "earnings": f64,
+    "block_rewards": f64,
+    "liquidity_fees": f64,
+    "start_time": i64,
+    "end_time": i64
 }
+```
 
 #### Runepool History
 
@@ -71,15 +83,21 @@ Parameters:
 - from: i64 (Optional) - Start timestamp
 - to: i64 (Optional) - End timestamp
 - count: i32 (Optional) - Number of records (1-400)
-Response:
-{
-"asset": String,
-"asset_depth": f64,
-"rune_depth": f64,
-"units": f64,
-"start_time": i64,
-"end_time": i64
+- page: i32 (Optional) - Page number
+- limit: i32 (Optional) - Limit per page
+- sort: String (Optional) - Sort by [start_time, end_time, asset_depth, rune_depth, units]
+- order: String (Optional) - Order [asc, desc]
+
+```json
+Response: {
+    "asset": String,
+    "asset_depth": f64,
+    "rune_depth": f64,
+    "units": f64,
+    "start_time": i64,
+    "end_time": i64
 }
+```
 
 #### Swaps History
 
@@ -93,76 +111,28 @@ Parameters:
 - from: i64 (Optional) - Start timestamp
 - to: i64 (Optional) - End timestamp
 - count: i32 (Optional) - Number of records (1-400)
-Response:
-{
-"volume": f64,
-"average_slip": f64,
-"fees": f64,
-"start_time": i64,
-"end_time": i64
+- page: i32 (Optional) - Page number
+- limit: i32 (Optional) - Limit per page
+- sort: String (Optional) - Sort by [start_time, end_time, volume, average_slip, fees]
+- order: String (Optional) - Order [asc, desc]
+```json
+Response: {
+    "volume": f64,
+    "average_slip": f64,
+    "fees": f64,
+    "start_time": i64,
+    "end_time": i64
 }
+```
 
-```plaintext
 
 ## MongoDB Collections
 
 ### 1. depth_history
-Stores historical depth and price data for pools
-```typescript
-{
-    _id: ObjectId,
-    pool: String,
-    asset_depth: Double,
-    rune_depth: Double,
-    asset_price: Double,
-    asset_price_usd: Double,
-    start_time: Int64,
-    end_time: Int64
-}
- ```
-
-### 2. earnings_history
-Stores earnings data across time periods
-
-```typescript
-{
-    _id: ObjectId,
-    earnings: Double,
-    block_rewards: Double,
-    liquidity_fees: Double,
-    start_time: Int64,
-    end_time: Int64
-}
- ```
-
+### 2. earnings_history 
 ### 3. runepool_history
-Stores RUNE pool historical data
-
-```typescript
-{
-    _id: ObjectId,
-    asset: String,
-    asset_depth: Double,
-    rune_depth: Double,
-    units: Double,
-    start_time: Int64,
-    end_time: Int64
-}
- ```
-
 ### 4. swaps_history
-Stores historical swap data
 
-```typescript
-{
-    _id: ObjectId,
-    volume: Double,
-    average_slip: Double,
-    fees: Double,
-    start_time: Int64,
-    end_time: Int64
-}
- ```
 
 ## Background Services
 ### Automated Data Synchronization
@@ -186,13 +156,17 @@ Common error cases:
 - Invalid pool identifier
 ## Setup & Running
 1. Environment Requirements:
-   
    - Rust
    - MongoDB
    - Cargo
-2. Start the service:
+2. Clone the repository:
+```bash
+git clone https://github.com/SaiAdithya3/midgaurd.git
+```
+3. Start the service:
 ```bash
 cargo run
  ```
+
 
 Service will be available at http://127.0.0.1:8080
