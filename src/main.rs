@@ -38,9 +38,9 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to connect to MongoDB");
 
-    actix_web::rt::spawn(services::scheduler::start_hourly_data_fetch(
-        mongo_client.clone(),
-    ));
+    // actix_web::rt::spawn(services::scheduler::start_hourly_data_fetch(
+    //     mongo_client.clone(),
+    // ));
 
     let db = database::db::Mongodb::new(mongo_client);
     let db_data = web::Data::new(db);
