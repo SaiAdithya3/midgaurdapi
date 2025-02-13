@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use mongodb::Client as MongoClient;
-use crate::services::db::Mongodb;
+use crate::database::db::Mongodb;
 use crate::models::earnings_history::{EarningsHistory, EarningsSummaryRequest};
 use crate::models::earnings_history_pools::{EarningsHistoryPools, PoolEarningsRequest};
 use mongodb::bson::oid::ObjectId;

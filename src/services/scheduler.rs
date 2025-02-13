@@ -7,7 +7,7 @@ use mongodb::Client;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicI64, Ordering};
 #[allow(unused_imports)]
-use crate::RUNEPOOL_START_TIME;
+use crate::utils::RUNEPOOL_START_TIME;
 
 // const INITIAL_START_TIME: i64 = 1707350400;
 const INITIAL_START_TIME: i64 = 1739487600;

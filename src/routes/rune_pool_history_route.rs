@@ -4,20 +4,9 @@ use log::{error, debug};
 use mongodb::bson::doc;
 use chrono::Utc;
 use crate::routes::queries::HistoryQueryParams;
-use crate::services::db::Mongodb;
+use crate::database::db::Mongodb;
+use crate::utils::get_seconds_per_interval;
 
-fn get_seconds_per_interval(interval: &str) -> i64 {
-    match interval {
-        "5min" => 300,
-        "hour" => 3600,
-        "day" => 86400,
-        "week" => 604800,
-        "month" => 2592000,
-        "quarter" => 7776000,
-        "year" => 31536000,
-        _ => 3600,
-    }
-}
 
 #[get("/api/history/runepool")]
 pub async fn get_runepool_history(

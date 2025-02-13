@@ -5,20 +5,9 @@ use log::{error, debug};
 use mongodb::bson::doc;
 use chrono::Utc;
 use crate::routes::queries::HistoryQueryParams;
-use crate::services::db::Mongodb;
+use crate::database::db::Mongodb;
+use crate::utils::get_seconds_per_interval;
 
-fn get_seconds_per_interval(interval: &str) -> i64 {
-    match interval {
-        "5min" => 300,
-        "hour" => 3600,
-        "day" => 86400,
-        "week" => 604800,
-        "month" => 2592000,
-        "quarter" => 7776000,
-        "year" => 31536000,
-        _ => 3600,
-    }
-}
 
 #[get("/api/history/earnings")]
 pub async fn get_earnings_history(
@@ -168,7 +157,6 @@ pub async fn get_earnings_history(
         })));
     }
 
-    // Calculate averages if count > 1
     if count > 1 {
         for field in [
             "avgNodeCount",
@@ -186,7 +174,6 @@ pub async fn get_earnings_history(
     // debug!("First document: {:?}", first);
     // debug!("Last document: {:?}", last);
 
-    // Add time range to meta
     meta.insert("startTime", first.get("startTime").unwrap());
     meta.insert("endTime", last.get("endTime").unwrap());
 
