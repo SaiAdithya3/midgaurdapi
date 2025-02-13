@@ -142,7 +142,7 @@ pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Resu
 }
 
 
-pub async fn fetch_swaps_history(_pool: &str, interval: &str, start_time: i64, mongo_client: &MongoClient) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn fetch_swaps_history(interval: &str, start_time: i64, mongo_client: &MongoClient) -> Result<(), Box<dyn std::error::Error>> {
     let mut current_time = start_time;
     
     loop {

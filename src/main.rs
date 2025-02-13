@@ -2,7 +2,7 @@ use chrono::{TimeZone, Utc};
 pub mod services;
 pub mod models;
 use actix_web::{web::{self}, App, HttpResponse, HttpServer, Responder};
-use std::sync::Mutex;
+use tokio::sync::Mutex; // Changed to tokio's Mutex
 use mongodb::Client;
 mod routes;
 mod middleware;
@@ -37,6 +37,11 @@ async fn main() -> std::io::Result<()> {
     let mongo_client = services::db::Mongodb::connect_to_mongodb()
         .await
         .expect("Failed to connect to MongoDB");
+        
+    // Spawn scheduler with proper async mutex handling
+    // let scheduler_client = mongo_client.clone();
+    actix_web::rt::spawn(services::scheduler::start_hourly_data_fetch(mongo_client.clone()));
+    
     let db = services::db::Mongodb::new(mongo_client);
     let db_data = web::Data::new(db);
 
@@ -71,7 +76,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::depth_history_routes::get_depth_history)
             .service(routes::swaps_history_routes::get_swaps_history)
             .service(routes::rune_pool_history_route::get_runepool_history)
-            .service(routes::earning_history_route::get_earnings_history)
+            .service(routes::earning_history_route::get_earnings_history)        
         //     .service(handlers::get_earnings)
         //    .service(handlers::get_earnings_pools)
     })

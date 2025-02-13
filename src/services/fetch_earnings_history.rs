@@ -106,7 +106,6 @@ pub async fn store_to_db(client: &MongoClient, intervals: Vec<Interval>) -> Resu
         match db.insert_document(earnings_collection, earning_history).await {
             Ok(result) => {
                 success_count += 1;
-                // Now insert all pools with reference to this earnings history
                 for pool in interval.pools {
                     let pool_entry = PoolEarningsRequest {
                         pool: pool.pool,

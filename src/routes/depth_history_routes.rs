@@ -29,7 +29,6 @@ pub async fn get_depth_history(
     let pool = path.into_inner();
     let seconds_per_interval = get_seconds_per_interval(query.interval.as_deref().unwrap_or("hour"));
     let collection = &db.depth_history;
-    // Build match stage
     let mut match_stage = doc! { "pool": &pool };
     if let Some(from) = query.from {
         match_stage.insert("start_time", doc! { "$gte": from });
