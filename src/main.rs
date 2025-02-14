@@ -46,7 +46,7 @@ async fn main() -> std::io::Result<()> {
     let db_data = web::Data::new(db);
 
     println!(
-        "Server starting at http://127.0.0.1:{}",
+        "Server starting at http://0.0.0.0:{}",
         env::var("PORT").unwrap_or("8080".to_string())
     );
     let api_docs = docs::ApiDoc::openapi();
