@@ -35,12 +35,18 @@ Parameters:
 Response:
 {
     "pool": String,
+    "start_time": i64,
+    "end_time": i64,
     "asset_depth": f64,
     "rune_depth": f64,
     "asset_price": f64,
     "asset_price_usd": f64,
-    "start_time": i64,
-    "end_time": i64
+    "liquidity_units": f64,
+    "members_count": f64,
+    "synth_units": f64,
+    "synth_supply": f64,
+    "units": f64,
+    "luvi": f64,
 }
 ```
 
@@ -63,11 +69,27 @@ Parameters:
 
 ```json
 Response: {
-    "earnings": f64,
-    "block_rewards": f64,
-    "liquidity_fees": f64,
     "start_time": i64,
-    "end_time": i64
+    "end_time": i64,
+    "block_rewards": f64,
+    "avg_node_count": f64,
+    "bonding_earnings": f64,
+    "liquidity_earnings": f64,
+    "liquidity_fees": f64,
+    "rune_price_usd": f64,
+    "pools": [
+        {
+            "_id": ObjectId,
+            "pool": String,
+            "asset_liquidity_fees": f64,
+            "rune_liquidity_fees": f64,
+            "total_liquidity_fees_rune": f64,
+            "saver_earning": f64,
+            "rewards": f64,
+            "start_time": i64,
+            "end_time": i64,
+        }
+    ]
 }
 ```
 
@@ -85,17 +107,18 @@ Parameters:
 - count: i32 (Optional) - Number of records (1-400)
 - page: i32 (Optional) - Page number
 - limit: i32 (Optional) - Limit per page
-- sort: String (Optional) - Sort by [start_time, end_time, asset_depth, rune_depth, units]
+- sort: String (Optional) - Sort by [start_time, end_time, depth, rune_depth, units]
 - order: String (Optional) - Order [asc, desc]
 
 ```json
 Response: {
     "asset": String,
-    "asset_depth": f64,
+    "depth": f64,
     "rune_depth": f64,
     "units": f64,
     "start_time": i64,
-    "end_time": i64
+    "end_time": i64,
+    "count": f64,
 }
 ```
 
@@ -117,11 +140,45 @@ Parameters:
 - order: String (Optional) - Order [asc, desc]
 ```json
 Response: {
-    "volume": f64,
-    "average_slip": f64,
-    "fees": f64,
-    "start_time": i64,
-    "end_time": i64
+    "pool": "String",
+    "start_time": "i64",
+    "end_time": "i64",
+    "to_asset_count": "i64",
+    "to_rune_count": "i64", 
+    "to_trade_count": "i64",
+    "from_trade_count": "i64",
+    "synth_mint_count": "i64",
+    "synth_redeem_count": "i64",
+    "total_count": "i64",
+    "to_asset_volume": "f64",
+    "to_rune_volume": "f64",
+    "to_trade_volume": "f64", 
+    "from_trade_volume": "f64",
+    "synth_mint_volume": "f64",
+    "synth_redeem_volume": "f64",
+    "total_volume": "f64",
+    "to_asset_volume_usd": "f64",
+    "to_rune_volume_usd": "f64",
+    "to_trade_volume_usd": "f64",
+    "from_trade_volume_usd": "f64",
+    "synth_mint_volume_usd": "f64",
+    "synth_redeem_volume_usd": "f64",
+    "total_volume_usd": "f64",
+    "to_asset_fees": "f64",
+    "to_rune_fees": "f64",
+    "to_trade_fees": "f64",
+    "from_trade_fees": "f64",
+    "synth_mint_fees": "f64",
+    "synth_redeem_fees": "f64",
+    "total_fees": "f64",
+    "to_asset_average_slip": "f64",
+    "to_rune_average_slip": "f64",
+    "to_trade_average_slip": "f64",
+    "from_trade_average_slip": "f64",
+    "synth_mint_average_slip": "f64",
+    "synth_redeem_average_slip": "f64",
+    "average_slip": "f64",
+    "rune_price_usd": "f64"
 }
 ```
 

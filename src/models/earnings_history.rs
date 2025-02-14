@@ -17,7 +17,7 @@ pub struct EarningsHistory {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct EarningsSummaryRequest {
+pub struct EarningsHistoryRequest {
     pub start_time: String,
     pub end_time: String,
     pub block_rewards: String,
@@ -28,10 +28,10 @@ pub struct EarningsSummaryRequest {
     pub rune_price_usd: String,
 }
 
-impl TryFrom<EarningsSummaryRequest> for EarningsHistory {
+impl TryFrom<EarningsHistoryRequest> for EarningsHistory {
     type Error = Box<dyn std::error::Error>;
 
-    fn try_from(intervals: EarningsSummaryRequest) -> Result<Self, Self::Error> {
+    fn try_from(intervals: EarningsHistoryRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             _id: ObjectId::new(),
             start_time: intervals.start_time.trim().parse::<i64>()?,

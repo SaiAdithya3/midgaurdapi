@@ -1,5 +1,5 @@
 use crate::database::db::Mongodb;
-use crate::models::earnings_history::{EarningsHistory, EarningsSummaryRequest};
+use crate::models::earnings_history::{EarningsHistory, EarningsHistoryRequest};
 use crate::models::earnings_history_pools::{EarningsHistoryPools, PoolEarningsRequest};
 use chrono::{DateTime, Utc};
 use mongodb::bson::oid::ObjectId;
@@ -73,7 +73,7 @@ pub async fn store_to_db(
 
     for interval in intervals {
         // First, create the earnings history entry
-        let earnings_summary = EarningsSummaryRequest {
+        let earnings_summary = EarningsHistoryRequest {
             start_time: interval.start_time.clone(),
             end_time: interval.end_time.clone(),
             block_rewards: interval.block_rewards.trim().to_string(),
