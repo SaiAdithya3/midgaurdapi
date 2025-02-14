@@ -62,7 +62,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::rune_pool_history_route::get_runepool_history)
             .service(routes::earning_history_route::get_earnings_history)
     })
-    .bind(format!("127.0.0.1:{}", env::var("PORT").unwrap()))?
+    .bind(format!("0.0.0.0:{}", env::var("PORT").unwrap_or("8080".to_string())))?
     .run()
     .await
 }
